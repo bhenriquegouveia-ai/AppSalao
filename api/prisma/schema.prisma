@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id             String   @id @default(uuid())
+  title          String
+  description    String   @db.Text
+  speaker        String?
+  locationName   String   @map("location_name")
+  locationMapX   Float?   @map("location_map_x")
+  locationMapY   Float?   @map("location_map_y")
+  startTime      DateTime @map("start_time")
+  endTime        DateTime @map("end_time")
+  category       String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  favorites UserFavorite[]
+
+  @@index([startTime])
+  @@index([category])
+  @@map("events")
+}
+
+model UserFavorite {
+  id        String   @id @default(uuid())
+  deviceId  String   @map("device_id")
+  eventId   String   @map("event_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, eventId])
+  @@index([deviceId])
+  @@map("user_favorites")
+}
