@@ -1,0 +1,76 @@
+import { create } from "zustand";
+import { getDeviceId } from "../../lib/deviceId";
+import { EventItem } from "../../types";
+import { addFavorite, fetchFavorites, removeFavorite } from "./api";
+import { cancelNotificationsForEvent, scheduleNotificationsForEvent } from "./notifications";
+
+interface FavoritesState {
+  favorites: EventItem[];
+  favoriteIds: Set<string>;
+  status: "idle" | "loading" | "error";
+  error: string | null;
+  load: () => Promise<void>;
+  isFavorite: (eventId: string) => boolean;
+  toggleFavorite: (event: EventItem) => Promise<void>;
+}
+
+export const useFavoritesStore = create<FavoritesState>((set, get) => ({
+  favorites: [],
+  favoriteIds: new Set(),
+  status: "idle",
+  error: null,
+
+  load: async () => {
+    set({ status: "loading", error: null });
+    try {
+      const deviceId = await getDeviceId();
+      const favorites = await fetchFavorites(deviceId);
+      set({
+        favorites,
+        favoriteIds: new Set(favorites.map((e) => e.id)),
+        status: "idle",
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Falha ao carregar favoritos";
+      set({ status: "error", error: message });
+    }
+  },
+
+  isFavorite: (eventId: string) => get().favoriteIds.has(eventId),
+
+  toggleFavorite: async (event: EventItem) => {
+    const deviceId = await getDeviceId();
+    const isCurrentlyFavorite = get().favoriteIds.has(event.id);
+
+    // Otimista: atualiza a UI antes da resposta da API.
+    const nextIds = new Set(get().favoriteIds);
+    let nextFavorites: EventItem[];
+
+    if (isCurrentlyFavorite) {
+      nextIds.delete(event.id);
+      nextFavorites = get().favorites.filter((e) => e.id !== event.id);
+    } else {
+      nextIds.add(event.id);
+      nextFavorites = [...get().favorites, event];
+    }
+
+    set({ favoriteIds: nextIds, favorites: nextFavorites });
+
+    try {
+      if (isCurrentlyFavorite) {
+        await removeFavorite(deviceId, event.id);
+        await cancelNotificationsForEvent(event.id);
+      } else {
+        await addFavorite(deviceId, event.id);
+        await scheduleNotificationsForEvent(event);
+      }
+    } catch (err) {
+      // Reverte a mudança otimista em caso de falha na API.
+      set({
+        favoriteIds: get().favoriteIds,
+        error: err instanceof Error ? err.message : "Falha ao atualizar favorito",
+      });
+      await get().load();
+    }
+  },
+}));

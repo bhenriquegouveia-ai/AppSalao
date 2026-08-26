@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Salão Abrasel",
+    "slug": "salao-abrasel",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.abrasel.salaoabrasel"
+    },
+    "android": {
+      "package": "com.abrasel.salaoabrasel",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["NOTIFICATIONS", "SCHEDULE_EXACT_ALARM"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#1F6F54"
+        }
+      ]
+    ]
+  }
+}
