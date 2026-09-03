@@ -19,7 +19,10 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["NOTIFICATIONS", "SCHEDULE_EXACT_ALARM"]
+      "permissions": [
+        "NOTIFICATIONS",
+        "SCHEDULE_EXACT_ALARM"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,7 +34,8 @@
           "icon": "./assets/icon.png",
           "color": "#1F6F54"
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }

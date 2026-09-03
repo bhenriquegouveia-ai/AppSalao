@@ -28,15 +28,27 @@ model Event {
   @@map("events")
 }
 
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  favorites UserFavorite[]
+
+  @@map("users")
+}
+
 model UserFavorite {
   id        String   @id @default(uuid())
-  deviceId  String   @map("device_id")
+  userId    String   @map("user_id")
   eventId   String   @map("event_id")
   createdAt DateTime @default(now()) @map("created_at")
 
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
-  @@unique([deviceId, eventId])
-  @@index([deviceId])
+  @@unique([userId, eventId])
+  @@index([userId])
   @@map("user_favorites")
 }

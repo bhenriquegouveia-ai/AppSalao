@@ -1,5 +1,10 @@
 import { NavigatorScreenParams } from "@react-navigation/native";
 
+export type AuthStackParamList = {
+  Login: undefined;
+  Signup: undefined;
+};
+
 export type AgendaStackParamList = {
   AgendaList: undefined;
   EventDetail: { eventId: string };
