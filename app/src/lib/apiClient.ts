@@ -1,3 +1,5 @@
+import { getAuthToken, triggerUnauthorized } from "./authToken";
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://localhost:3333";
 const API_KEY = process.env.EXPO_PUBLIC_API_KEY ?? "";
 
@@ -12,16 +14,23 @@ export class ApiRequestError extends Error {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = getAuthToken();
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
       "x-api-key": API_KEY,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      triggerUnauthorized();
+    }
+
     const body = await response.json().catch(() => ({}));
     throw new ApiRequestError(response.status, body.error ?? `Erro ${response.status}`);
   }

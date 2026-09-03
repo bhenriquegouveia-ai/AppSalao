@@ -20,16 +20,17 @@ Edite `.env`:
 - `DATABASE_URL`: string de conexão MySQL (Railway ou local).
 - `APP_API_KEY`: chave que o app mobile vai usar (header `x-api-key`).
 - `ADMIN_API_KEY`: chave separada para as rotas administrativas (header `x-admin-key`), usada para cadastrar/editar/remover eventos sem mexer direto no banco.
+- `JWT_SECRET`: segredo usado para assinar os tokens de login (gere um valor aleatório longo, ex: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
 
-### 1.2 Instalar, migrar e popular com dados mock
+### 1.2 Instalar, migrar e popular com a programação
 
 ```bash
 npm install
-npx prisma migrate dev --name init
+npx prisma migrate dev
 npx prisma db seed
 ```
 
-O seed cria eventos **fictícios** (prefixados com `[MOCK]`) só para desenvolvimento. Os eventos reais devem ser cadastrados via `POST /events` (rota admin) ou diretamente no banco.
+O seed popula a programação oficial do Salão Abrasel (Arena 1 e Arena 2, 15 e 16/09). Para editar eventos depois, use `POST/PUT/DELETE /events` (rota admin) ou o banco diretamente.
 
 ### 1.3 Rodar em desenvolvimento
 
@@ -46,17 +47,22 @@ curl http://localhost:3333/events -H "x-api-key: SUA_APP_API_KEY"
 
 ### 1.4 Endpoints
 
-| Método | Rota                    | Auth        | Descrição                                  |
-|--------|--------------------------|-------------|---------------------------------------------|
-| GET    | `/health`                | —           | Healthcheck                                  |
-| GET    | `/events`                | `x-api-key` | Lista eventos (`?date=YYYY-MM-DD&category=`) |
-| GET    | `/events/:id`            | `x-api-key` | Detalhe de um evento                         |
-| POST   | `/favorites`             | `x-api-key` | `{ device_id, event_id }`                    |
-| DELETE | `/favorites`             | `x-api-key` | `{ device_id, event_id }`                    |
-| GET    | `/favorites/:device_id`  | `x-api-key` | Eventos favoritados por um device            |
-| POST   | `/events`                | `x-admin-key` | Cria evento                                |
-| PUT    | `/events/:id`            | `x-admin-key` | Edita evento                               |
-| DELETE | `/events/:id`            | `x-admin-key` | Remove evento                              |
+| Método | Rota                    | Auth          | Descrição                                    |
+|--------|--------------------------|---------------|-----------------------------------------------|
+| GET    | `/health`                | —             | Healthcheck                                    |
+| GET    | `/events`                | `x-api-key`   | Lista eventos (`?date=YYYY-MM-DD&category=`)   |
+| GET    | `/events/:id`            | `x-api-key`   | Detalhe de um evento                           |
+| POST   | `/auth/register`         | —             | `{ email, password }` → `{ token, user }`      |
+| POST   | `/auth/login`            | —             | `{ email, password }` → `{ token, user }`      |
+| GET    | `/auth/me`               | Bearer token  | Retorna o usuário do token atual               |
+| POST   | `/favorites`             | Bearer token  | `{ event_id }` — favorita pro usuário do token |
+| DELETE | `/favorites`             | Bearer token  | `{ event_id }`                                 |
+| GET    | `/favorites`             | Bearer token  | Eventos favoritados pelo usuário do token      |
+| POST   | `/events`                | `x-admin-key` | Cria evento                                    |
+| PUT    | `/events/:id`            | `x-admin-key` | Edita evento                                   |
+| DELETE | `/events/:id`            | `x-admin-key` | Remove evento                                  |
+
+O app exige login (e-mail/senha) para tudo — não há mais o modo anônimo por `device_id` que existia antes. Crie uma conta pela própria tela de cadastro do app.
 
 ### 1.5 Deploy (Railway) — passo manual
 
@@ -105,5 +111,5 @@ eas build --platform ios
 
 - **Planta do local**: o mapa usa um placeholder ilustrativo (`src/features/map/PlantaPlaceholder.tsx`). Assim que a planta real (PNG/SVG) for enviada, trocar por um `<Image>` do mesmo componente.
 - **Identidade visual Abrasel**: `src/constants/theme.ts` usa uma paleta neutra placeholder. Trocar pelas cores/logo oficiais quando fornecidos.
-- **Dados reais dos eventos**: cadastrar via `POST /events` (rota admin) — o seed é só mock de desenvolvimento.
 - **Deploy Railway e build EAS**: passos manuais descritos acima (exigem login nas suas contas).
+- **Recuperação de senha / verificação de e-mail**: não implementado (exigiria infra de envio de e-mail) — fora do escopo atual.

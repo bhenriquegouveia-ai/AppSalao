@@ -5,6 +5,7 @@ import { env } from "./env";
 import { healthRouter } from "./routes/health";
 import { eventsRouter } from "./routes/events";
 import { favoritesRouter } from "./routes/favorites";
+import { authRouter } from "./routes/auth";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(morgan("dev"));
 app.use(healthRouter);
 app.use(eventsRouter);
 app.use(favoritesRouter);
+app.use(authRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

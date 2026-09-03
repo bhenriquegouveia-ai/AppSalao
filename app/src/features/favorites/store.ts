@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { getDeviceId } from "../../lib/deviceId";
 import { EventItem } from "../../types";
 import { addFavorite, fetchFavorites, removeFavorite } from "./api";
 import { cancelNotificationsForEvent, scheduleNotificationsForEvent } from "./notifications";
@@ -12,6 +11,7 @@ interface FavoritesState {
   load: () => Promise<void>;
   isFavorite: (eventId: string) => boolean;
   toggleFavorite: (event: EventItem) => Promise<void>;
+  reset: () => void;
 }
 
 export const useFavoritesStore = create<FavoritesState>((set, get) => ({
@@ -23,8 +23,7 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
   load: async () => {
     set({ status: "loading", error: null });
     try {
-      const deviceId = await getDeviceId();
-      const favorites = await fetchFavorites(deviceId);
+      const favorites = await fetchFavorites();
       set({
         favorites,
         favoriteIds: new Set(favorites.map((e) => e.id)),
@@ -39,7 +38,6 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
   isFavorite: (eventId: string) => get().favoriteIds.has(eventId),
 
   toggleFavorite: async (event: EventItem) => {
-    const deviceId = await getDeviceId();
     const isCurrentlyFavorite = get().favoriteIds.has(event.id);
 
     // Otimista: atualiza a UI antes da resposta da API.
@@ -58,19 +56,21 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
 
     try {
       if (isCurrentlyFavorite) {
-        await removeFavorite(deviceId, event.id);
+        await removeFavorite(event.id);
         await cancelNotificationsForEvent(event.id);
       } else {
-        await addFavorite(deviceId, event.id);
+        await addFavorite(event.id);
         await scheduleNotificationsForEvent(event);
       }
     } catch (err) {
       // Reverte a mudança otimista em caso de falha na API.
       set({
-        favoriteIds: get().favoriteIds,
         error: err instanceof Error ? err.message : "Falha ao atualizar favorito",
       });
       await get().load();
     }
   },
+
+  // Limpa o estado ao deslogar, pra não vazar favoritos da conta anterior.
+  reset: () => set({ favorites: [], favoriteIds: new Set(), status: "idle", error: null }),
 }));
