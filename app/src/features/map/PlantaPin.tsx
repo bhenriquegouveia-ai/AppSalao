@@ -7,6 +7,7 @@ interface Props {
   y: number; // 0..1, relativo à altura da planta
   status: EventStatus;
   highlighted: boolean;
+  /** Código curto exibido dentro do pin (ex: "1", "2") — já formatado pelo chamador. */
   label: string;
   onPress: () => void;
 }
@@ -35,7 +36,7 @@ export function PlantaPin({ x, y, status, highlighted, label, onPress }: Props) 
           highlighted && styles.pinHighlighted,
         ]}
       >
-        <Text style={styles.pinText}>{label.slice(0, 1).toUpperCase()}</Text>
+        <Text style={styles.pinText}>{label}</Text>
       </Pressable>
     </View>
   );
