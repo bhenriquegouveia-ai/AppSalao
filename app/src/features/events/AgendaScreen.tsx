@@ -115,9 +115,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   filters: {
+    // minWidth (não flexGrow) garante que o conteúdo fique centralizado
+    // quando cabe na tela, sem afetar a rolagem quando os chips não cabem.
+    minWidth: "100%",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     gap: spacing.xs,
+    justifyContent: "center",
   },
   list: {
     padding: spacing.md,
