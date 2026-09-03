@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { colors, spacing } from "../../constants/theme";
 import { EmptyState, ErrorState, LoadingState } from "../../components/StateView";
@@ -47,11 +47,7 @@ export function AgendaScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       {days.length > 1 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filters}
-        >
+        <View style={styles.filters}>
           {days.map((day) => (
             <FilterChip
               key={day}
@@ -64,7 +60,7 @@ export function AgendaScreen({ navigation }: Props) {
               onPress={() => setDayFilter(dayFilter === day ? null : day)}
             />
           ))}
-        </ScrollView>
+        </View>
       )}
 
       {error && events.length > 0 && (
@@ -98,13 +94,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   filters: {
-    // minWidth (não flexGrow) garante que o conteúdo fique centralizado
-    // quando cabe na tela, sem afetar a rolagem quando os chips não cabem.
-    minWidth: "100%",
+    // View simples em vez de ScrollView: só há poucos filtros de data, então
+    // não precisa rolar — e evita bugs de medição de altura do ScrollView
+    // horizontal no react-native-web.
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     gap: spacing.xs,
-    justifyContent: "center",
   },
   list: {
     padding: spacing.md,
