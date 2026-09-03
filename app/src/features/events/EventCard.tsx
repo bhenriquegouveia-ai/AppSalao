@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, radius, spacing } from "../../constants/theme";
+import { colors, radius, spacing, typography } from "../../constants/theme";
 import { formatEventDate, formatEventTime } from "../../lib/dateTime";
 import { useFavoritesStore } from "../favorites/store";
 import { EventItem } from "../../types";
@@ -43,11 +43,13 @@ export function EventCard({ event, onPress }: Props) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.none,
     padding: spacing.md,
     marginBottom: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
   },
   header: {
     flexDirection: "row",
@@ -72,9 +74,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   location: {
-    fontSize: 13,
+    ...typography.label,
     color: colors.textMuted,
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
   footer: {
     marginTop: spacing.sm,
