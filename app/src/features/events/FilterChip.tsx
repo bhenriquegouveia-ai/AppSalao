@@ -13,15 +13,20 @@ export function FilterChip({ label, active, onPress }: Props) {
       style={[styles.chip, active && styles.chipActive]}
       onPress={onPress}
     >
-      <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
+      <Text style={[styles.label, active && styles.labelActive]} numberOfLines={1}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   chip: {
+    // Altura fixa (em vez de só depender de paddingVertical) garante que a
+    // caixa nunca cresça verticalmente ao selecionar, seja qual for a causa.
+    height: 34,
+    justifyContent: "center",
     paddingHorizontal: spacing.md,
-    paddingVertical: 6,
     borderRadius: radius.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
