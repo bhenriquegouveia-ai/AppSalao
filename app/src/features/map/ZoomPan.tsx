@@ -47,8 +47,12 @@ export const ZoomPan = forwardRef<ZoomPanHandle, Props>(function ZoomPan(
       baseScale.setValue(clampedScale);
       pinchScale.setValue(1);
 
-      const offsetX = viewportWidth / 2 - x * clampedScale;
-      const offsetY = viewportHeight / 2 - y * clampedScale;
+      // O CSS aplica `scale` em torno do centro do elemento por padrão (não
+      // do canto superior esquerdo), então o translate precisa compensar
+      // esse pivô central — daí o `viewportWidth/2` também ser multiplicado
+      // pela escala aqui (senão só funciona certo quando scale === 1).
+      const offsetX = clampedScale * (viewportWidth / 2 - x);
+      const offsetY = clampedScale * (viewportHeight / 2 - y);
       lastOffset.current = { x: offsetX, y: offsetY };
       baseTranslateX.setValue(offsetX);
       baseTranslateY.setValue(offsetY);
