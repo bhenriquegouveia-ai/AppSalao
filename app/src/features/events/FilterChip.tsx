@@ -38,7 +38,9 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   labelActive: {
+    // Cor sozinha já indica o estado selecionado — mudar fontWeight aqui
+    // alterava a largura do texto (negrito é mais largo) e fazia a caixa
+    // crescer, já que ela não tem largura fixa.
     color: "#fff",
-    fontWeight: "600",
   },
 });
