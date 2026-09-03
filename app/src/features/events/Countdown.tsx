@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors } from "../../constants/theme";
+import { colors, radius } from "../../constants/theme";
 import { formatCountdown } from "../../lib/dateTime";
 import { EventItem } from "../../types";
 import { useCountdown } from "./useCountdown";
@@ -28,7 +28,7 @@ export function Countdown({ event }: Props) {
   }
 
   return (
-    <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+    <View style={[styles.badge, { backgroundColor: colors.marinho }]}>
       <Text style={styles.text}>Começa em {formatCountdown(countdown)}</Text>
     </View>
   );
@@ -38,8 +38,12 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     alignSelf: "flex-start",
+    // Borda sutil garante que a pill tenha contorno visível tanto sobre
+    // cards claros quanto sobre o hero em gradiente escuro (EventDetail).
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
   },
   text: {
     color: "#fff",

@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { NavigationProp } from "@react-navigation/native";
-import { colors, radius, spacing } from "../../constants/theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { colors, gradients, radius, spacing } from "../../constants/theme";
 import { LoadingState, ErrorState } from "../../components/StateView";
 import {
   AgendaStackParamList,
@@ -79,46 +80,54 @@ export function EventDetailScreen({ route, navigation }: Props) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Countdown event={event} />
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      <LinearGradient
+        colors={gradients.cinematic}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.hero}
+      >
+        <Countdown event={event} />
+        <Text style={styles.title}>{event.title}</Text>
+      </LinearGradient>
 
-      <Text style={styles.title}>{event.title}</Text>
-
-      <View style={styles.infoRow}>
-        <Text style={styles.infoLabel}>Quando</Text>
-        <Text style={styles.infoValue}>
-          {formatEventDate(event.startTime)} · {formatEventTime(event.startTime)}–
-          {formatEventTime(event.endTime)}
-        </Text>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Text style={styles.infoLabel}>Local</Text>
-        <Text style={styles.infoValue}>{event.locationName}</Text>
-      </View>
-
-      {event.speaker && (
+      <View style={styles.content}>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Palestrante</Text>
-          <Text style={styles.infoValue}>{event.speaker}</Text>
-        </View>
-      )}
-
-      <Text style={styles.description}>{event.description}</Text>
-
-      <View style={styles.actions}>
-        <Pressable
-          style={[styles.button, isFavorite && styles.buttonActive]}
-          onPress={() => toggleFavorite(event)}
-        >
-          <Text style={[styles.buttonText, isFavorite && styles.buttonTextActive]}>
-            {isFavorite ? "★ Favoritado" : "☆ Favoritar"}
+          <Text style={styles.infoLabel}>Quando</Text>
+          <Text style={styles.infoValue}>
+            {formatEventDate(event.startTime)} · {formatEventTime(event.startTime)}–
+            {formatEventTime(event.endTime)}
           </Text>
-        </Pressable>
+        </View>
 
-        <Pressable style={styles.buttonOutline} onPress={goToMap}>
-          <Text style={styles.buttonOutlineText}>Ver no mapa</Text>
-        </Pressable>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Local</Text>
+          <Text style={styles.infoValue}>{event.locationName}</Text>
+        </View>
+
+        {event.speaker && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Palestrante</Text>
+            <Text style={styles.infoValue}>{event.speaker}</Text>
+          </View>
+        )}
+
+        <Text style={styles.description}>{event.description}</Text>
+
+        <View style={styles.actions}>
+          <Pressable
+            style={[styles.button, isFavorite && styles.buttonActive]}
+            onPress={() => toggleFavorite(event)}
+          >
+            <Text style={[styles.buttonText, isFavorite && styles.buttonTextActive]}>
+              {isFavorite ? "★ Favoritado" : "☆ Favoritar"}
+            </Text>
+          </Pressable>
+
+          <Pressable style={styles.buttonOutline} onPress={goToMap}>
+            <Text style={styles.buttonOutlineText}>Ver no mapa</Text>
+          </Pressable>
+        </View>
       </View>
     </ScrollView>
   );
@@ -129,15 +138,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  content: {
+  scrollContent: {
+    flexGrow: 1,
+  },
+  hero: {
     padding: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
     gap: spacing.sm,
   },
   title: {
     fontSize: 22,
     fontWeight: "800",
-    color: colors.text,
+    color: colors.textOnDark,
     marginTop: spacing.sm,
+  },
+  content: {
+    padding: spacing.lg,
+    gap: spacing.sm,
   },
   infoRow: {
     marginTop: spacing.sm,
@@ -169,7 +187,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     paddingVertical: spacing.sm,
     alignItems: "center",
   },
@@ -187,13 +205,13 @@ const styles = StyleSheet.create({
   buttonOutline: {
     flex: 1,
     borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: radius.md,
+    borderColor: colors.marinho,
+    borderRadius: radius.pill,
     paddingVertical: spacing.sm,
     alignItems: "center",
   },
   buttonOutlineText: {
-    color: colors.primary,
+    color: colors.marinho,
     fontWeight: "700",
   },
 });

@@ -7,10 +7,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { colors, radius, spacing } from "../../constants/theme";
+import { colors, gradients, radius, spacing, typography } from "../../constants/theme";
 import { AuthStackParamList } from "../../navigation/types";
 import { useAuthStore } from "./store";
 
@@ -40,8 +40,11 @@ export function LoginScreen({ navigation }: Props) {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <Text style={styles.title}>Salão Abrasel</Text>
-      <Text style={styles.subtitle}>Entre para ver e favoritar a programação</Text>
+      <LinearGradient colors={gradients.cinematic} style={styles.hero}>
+        <Text style={styles.eyebrow}>Salão Abrasel · 2026</Text>
+        <Text style={styles.title}>Aberto{"\n"}Para O Futuro</Text>
+        <Text style={styles.subtitle}>Entre para ver e favoritar a programação</Text>
+      </LinearGradient>
 
       <TextInput
         style={styles.input}
@@ -88,44 +91,53 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    justifyContent: "center",
-    padding: spacing.lg,
+  },
+  hero: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl * 1.5,
+    paddingBottom: spacing.xl,
+  },
+  eyebrow: {
+    ...typography.label,
+    color: colors.rosa,
+    marginBottom: spacing.sm,
   },
   title: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: colors.text,
-    textAlign: "center",
+    ...typography.display,
+    fontSize: 34,
+    lineHeight: 38,
+    color: colors.textOnDark,
   },
   subtitle: {
     fontSize: 14,
-    color: colors.textMuted,
-    textAlign: "center",
-    marginTop: spacing.xs,
-    marginBottom: spacing.xl,
+    color: colors.azulClaro,
+    marginTop: spacing.md,
   },
   input: {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 4,
     fontSize: 15,
     color: colors.text,
-    marginBottom: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
   },
   error: {
     color: colors.live,
     fontSize: 13,
-    marginBottom: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
   },
   button: {
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     paddingVertical: spacing.sm + 4,
     alignItems: "center",
-    marginTop: spacing.xs,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -140,7 +152,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   link: {
-    color: colors.primary,
+    color: colors.marinho,
     fontSize: 14,
     fontWeight: "600",
   },

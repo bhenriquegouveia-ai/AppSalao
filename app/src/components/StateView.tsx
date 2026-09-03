@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, spacing } from "../constants/theme";
+import { colors, radius, spacing } from "../constants/theme";
 
 export function LoadingState({ label = "Carregando..." }: { label?: string }) {
   return (
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderRadius: 8,
+    borderRadius: radius.pill,
   },
   buttonText: {
     color: "#fff",

@@ -32,7 +32,7 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#1F6F54"
+          "color": "#EA5E81"
         }
       ],
       "expo-secure-store"

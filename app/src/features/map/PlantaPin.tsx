@@ -12,7 +12,7 @@ interface Props {
 }
 
 const STATUS_COLOR: Record<EventStatus, string> = {
-  upcoming: colors.primary,
+  upcoming: colors.marinho,
   live: colors.live,
   ended: colors.ended,
 };

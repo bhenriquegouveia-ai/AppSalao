@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     right: spacing.md,
     bottom: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: 6,
     backgroundColor: colors.primary,
-    borderRadius: radius.sm,
+    borderRadius: radius.pill,
   },
   detailButtonText: {
     color: "#fff",
