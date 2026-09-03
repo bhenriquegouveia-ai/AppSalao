@@ -20,7 +20,6 @@ function dayKeyOf(isoDate: string): string {
 export function AgendaScreen({ navigation }: Props) {
   const { events, status, error, load, refresh } = useEventsStore();
   const [dayFilter, setDayFilter] = useState<string | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   useEffect(() => {
     load();
@@ -31,18 +30,11 @@ export function AgendaScreen({ navigation }: Props) {
     return unique.sort();
   }, [events]);
 
-  const categories = useMemo(() => {
-    const unique = new Set<string>();
-    events.forEach((e) => e.category && unique.add(e.category));
-    return Array.from(unique);
-  }, [events]);
-
   const filteredEvents = useMemo(() => {
     return events
       .filter((e) => !dayFilter || dayKeyOf(e.startTime) === dayFilter)
-      .filter((e) => !categoryFilter || e.category === categoryFilter)
       .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-  }, [events, dayFilter, categoryFilter]);
+  }, [events, dayFilter]);
 
   if (status === "loading" && events.length === 0) {
     return <LoadingState label="Carregando programação..." />;
@@ -54,31 +46,22 @@ export function AgendaScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      {(days.length > 1 || categories.length > 0) && (
+      {days.length > 1 && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filters}
         >
-          {days.length > 1 &&
-            days.map((day) => (
-              <FilterChip
-                key={day}
-                label={new Intl.DateTimeFormat("pt-BR", {
-                  timeZone: "America/Sao_Paulo",
-                  day: "2-digit",
-                  month: "short",
-                }).format(new Date(`${day}T12:00:00-03:00`))}
-                active={dayFilter === day}
-                onPress={() => setDayFilter(dayFilter === day ? null : day)}
-              />
-            ))}
-          {categories.map((category) => (
+          {days.map((day) => (
             <FilterChip
-              key={category}
-              label={category}
-              active={categoryFilter === category}
-              onPress={() => setCategoryFilter(categoryFilter === category ? null : category)}
+              key={day}
+              label={new Intl.DateTimeFormat("pt-BR", {
+                timeZone: "America/Sao_Paulo",
+                day: "2-digit",
+                month: "short",
+              }).format(new Date(`${day}T12:00:00-03:00`))}
+              active={dayFilter === day}
+              onPress={() => setDayFilter(dayFilter === day ? null : day)}
             />
           ))}
         </ScrollView>
