@@ -6,19 +6,23 @@ interface Props {
   children: React.ReactNode;
   viewportWidth: number;
   viewportHeight: number;
+  /** Menor escala permitida — o "encaixar na tela" (conteúdo é renderizado
+   * na resolução nativa da imagem, então isso normalmente é < 1). */
+  minScale: number;
+  /** Maior escala permitida. */
+  maxScale: number;
 }
 
 export interface ZoomPanHandle {
-  /** Centraliza o ponto (em pixels, na escala 1x do conteúdo) na viewport. */
-  centerOn: (x: number, y: number, targetScale?: number) => void;
+  /** Centraliza o ponto (em pixels, na escala 1x do conteúdo, ou seja, na
+   * resolução nativa da imagem) na viewport. */
+  centerOn: (x: number, y: number, targetScale: number) => void;
   /** Aumenta/diminui o zoom mantendo centralizado o ponto que já está no
    * meio da tela — é o que os botões de zoom usam. */
   zoomIn: () => void;
   zoomOut: () => void;
 }
 
-const MIN_SCALE = 1;
-const MAX_SCALE = 4;
 const ZOOM_STEP = 1.5;
 
 // Pinch-to-zoom + pan sobre a planta do evento. Segue o padrão clássico do
@@ -26,13 +30,13 @@ const ZOOM_STEP = 1.5;
 // gestos) + escala/translação "delta" do gesto em andamento, somadas via
 // Animated.multiply/add e tudo com useNativeDriver.
 export const ZoomPan = forwardRef<ZoomPanHandle, Props>(function ZoomPan(
-  { children, viewportWidth, viewportHeight },
+  { children, viewportWidth, viewportHeight, minScale, maxScale },
   ref
 ) {
-  const baseScale = useRef(new Animated.Value(1)).current;
+  const baseScale = useRef(new Animated.Value(minScale)).current;
   const pinchScale = useRef(new Animated.Value(1)).current;
   const scale = useRef(Animated.multiply(baseScale, pinchScale)).current;
-  const lastScale = useRef(1);
+  const lastScale = useRef(minScale);
 
   const baseTranslateX = useRef(new Animated.Value(0)).current;
   const baseTranslateY = useRef(new Animated.Value(0)).current;
@@ -50,7 +54,7 @@ export const ZoomPan = forwardRef<ZoomPanHandle, Props>(function ZoomPan(
   // do CSS `scale` — tanto `centerOn` quanto os botões de zoom passam por
   // aqui.
   const applyTransform = (x: number, y: number, targetScale: number) => {
-    const clampedScale = Math.min(Math.max(targetScale, MIN_SCALE), MAX_SCALE);
+    const clampedScale = Math.min(Math.max(targetScale, minScale), maxScale);
     lastScale.current = clampedScale;
     baseScale.setValue(clampedScale);
     pinchScale.setValue(1);
@@ -78,7 +82,7 @@ export const ZoomPan = forwardRef<ZoomPanHandle, Props>(function ZoomPan(
   });
 
   useImperativeHandle(ref, () => ({
-    centerOn: (x, y, targetScale = 2) => applyTransform(x, y, targetScale),
+    centerOn: (x, y, targetScale) => applyTransform(x, y, targetScale),
     zoomIn: () => {
       const { x, y } = currentCenter();
       applyTransform(x, y, lastScale.current * ZOOM_STEP);
@@ -98,7 +102,7 @@ export const ZoomPan = forwardRef<ZoomPanHandle, Props>(function ZoomPan(
   }) => {
     if (event.nativeEvent.oldState === State.ACTIVE) {
       lastScale.current *= event.nativeEvent.scale;
-      lastScale.current = Math.min(Math.max(lastScale.current, MIN_SCALE), MAX_SCALE);
+      lastScale.current = Math.min(Math.max(lastScale.current, minScale), maxScale);
       baseScale.setValue(lastScale.current);
       pinchScale.setValue(1);
     }
