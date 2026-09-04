@@ -1,24 +1,18 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors } from "../../constants/theme";
-import { EventStatus } from "../../types";
 
 interface Props {
   x: number; // 0..1, relativo à largura da planta
   y: number; // 0..1, relativo à altura da planta
-  status: EventStatus;
+  /** Cor de fundo do pin — o chamador decide (status do evento, ou uma cor fixa pra pontos de interesse). */
+  color: string;
   highlighted: boolean;
   /** Código curto exibido dentro do pin (ex: "1", "2") — já formatado pelo chamador. */
   label: string;
   onPress: () => void;
 }
 
-const STATUS_COLOR: Record<EventStatus, string> = {
-  upcoming: colors.marinho,
-  live: colors.live,
-  ended: colors.ended,
-};
-
-export function PlantaPin({ x, y, status, highlighted, label, onPress }: Props) {
+export function PlantaPin({ x, y, color, highlighted, label, onPress }: Props) {
   return (
     <View
       style={[
@@ -30,11 +24,7 @@ export function PlantaPin({ x, y, status, highlighted, label, onPress }: Props) 
       <Pressable
         onPress={onPress}
         hitSlop={10}
-        style={[
-          styles.pin,
-          { backgroundColor: STATUS_COLOR[status] },
-          highlighted && styles.pinHighlighted,
-        ]}
+        style={[styles.pin, { backgroundColor: color }, highlighted && styles.pinHighlighted]}
       >
         <Text style={styles.pinText}>{label}</Text>
       </Pressable>

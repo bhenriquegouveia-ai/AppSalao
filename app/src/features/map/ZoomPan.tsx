@@ -11,10 +11,15 @@ interface Props {
 export interface ZoomPanHandle {
   /** Centraliza o ponto (em pixels, na escala 1x do conteúdo) na viewport. */
   centerOn: (x: number, y: number, targetScale?: number) => void;
+  /** Aumenta/diminui o zoom mantendo centralizado o ponto que já está no
+   * meio da tela — é o que os botões de zoom usam. */
+  zoomIn: () => void;
+  zoomOut: () => void;
 }
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
+const ZOOM_STEP = 1.5;
 
 // Pinch-to-zoom + pan sobre a planta do evento. Segue o padrão clássico do
 // react-native-gesture-handler: escala/translação "base" (persistida entre
@@ -40,24 +45,47 @@ export const ZoomPan = forwardRef<ZoomPanHandle, Props>(function ZoomPan(
   const pinchRef = useRef(null);
   const panRef = useRef(null);
 
-  useImperativeHandle(ref, () => ({
-    centerOn: (x, y, targetScale = 2) => {
-      const clampedScale = Math.min(Math.max(targetScale, MIN_SCALE), MAX_SCALE);
-      lastScale.current = clampedScale;
-      baseScale.setValue(clampedScale);
-      pinchScale.setValue(1);
+  // Centraliza `(x,y)` (em pixels, escala 1x do conteúdo) na viewport, na
+  // escala `targetScale`. Único lugar que sabe da matemática do pivô central
+  // do CSS `scale` — tanto `centerOn` quanto os botões de zoom passam por
+  // aqui.
+  const applyTransform = (x: number, y: number, targetScale: number) => {
+    const clampedScale = Math.min(Math.max(targetScale, MIN_SCALE), MAX_SCALE);
+    lastScale.current = clampedScale;
+    baseScale.setValue(clampedScale);
+    pinchScale.setValue(1);
 
-      // O CSS aplica `scale` em torno do centro do elemento por padrão (não
-      // do canto superior esquerdo), então o translate precisa compensar
-      // esse pivô central — daí o `viewportWidth/2` também ser multiplicado
-      // pela escala aqui (senão só funciona certo quando scale === 1).
-      const offsetX = clampedScale * (viewportWidth / 2 - x);
-      const offsetY = clampedScale * (viewportHeight / 2 - y);
-      lastOffset.current = { x: offsetX, y: offsetY };
-      baseTranslateX.setValue(offsetX);
-      baseTranslateY.setValue(offsetY);
-      panTranslateX.setValue(0);
-      panTranslateY.setValue(0);
+    // O CSS aplica `scale` em torno do centro do elemento por padrão (não
+    // do canto superior esquerdo), então o translate precisa compensar
+    // esse pivô central — daí o `viewportWidth/2` também ser multiplicado
+    // pela escala aqui (senão só funciona certo quando scale === 1).
+    const offsetX = clampedScale * (viewportWidth / 2 - x);
+    const offsetY = clampedScale * (viewportHeight / 2 - y);
+    lastOffset.current = { x: offsetX, y: offsetY };
+    baseTranslateX.setValue(offsetX);
+    baseTranslateY.setValue(offsetY);
+    panTranslateX.setValue(0);
+    panTranslateY.setValue(0);
+  };
+
+  // Inverso de applyTransform: descobre qual ponto do conteúdo está
+  // atualmente no centro da viewport, a partir da última escala/translação
+  // aplicadas — usado pelos botões de zoom pra "zoomar no que já está sendo
+  // visto" em vez de recentralizar em outro lugar.
+  const currentCenter = () => ({
+    x: viewportWidth / 2 - lastOffset.current.x / lastScale.current,
+    y: viewportHeight / 2 - lastOffset.current.y / lastScale.current,
+  });
+
+  useImperativeHandle(ref, () => ({
+    centerOn: (x, y, targetScale = 2) => applyTransform(x, y, targetScale),
+    zoomIn: () => {
+      const { x, y } = currentCenter();
+      applyTransform(x, y, lastScale.current * ZOOM_STEP);
+    },
+    zoomOut: () => {
+      const { x, y } = currentCenter();
+      applyTransform(x, y, lastScale.current / ZOOM_STEP);
     },
   }));
 
