@@ -7,6 +7,7 @@ import { eventsRouter } from "./routes/events";
 import { favoritesRouter } from "./routes/favorites";
 import { authRouter } from "./routes/auth";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { checkAndSendEmailReminders } from "./services/emailReminders";
 
 const app = express();
 
@@ -25,3 +26,11 @@ app.use(errorHandler);
 app.listen(env.PORT, () => {
   console.log(`API Salão Abrasel rodando na porta ${env.PORT}`);
 });
+
+// Best-effort, igual às notificações locais do app: uma falha aqui nunca
+// deve derrubar a API.
+setInterval(() => {
+  checkAndSendEmailReminders().catch((err) => {
+    console.warn("Falha ao checar lembretes por e-mail:", err);
+  });
+}, 60_000);

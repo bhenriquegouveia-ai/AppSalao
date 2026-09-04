@@ -52,3 +52,16 @@ model UserFavorite {
   @@index([userId])
   @@map("user_favorites")
 }
+
+// Registra cada lembrete por e-mail já disparado, pra a checagem periódica
+// (a cada minuto) nunca mandar o mesmo aviso duas vezes.
+model SentEmailReminder {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  eventId       String   @map("event_id")
+  minutesBefore Int      @map("minutes_before")
+  sentAt        DateTime @default(now()) @map("sent_at")
+
+  @@unique([userId, eventId, minutesBefore])
+  @@map("sent_email_reminders")
+}
