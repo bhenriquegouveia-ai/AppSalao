@@ -4,6 +4,8 @@ import { asyncHandler } from "../lib/asyncHandler";
 import { ApiError } from "../lib/ApiError";
 import { requireAuth } from "../middleware/auth";
 import { favoriteBodySchema } from "../schemas/favorite";
+import { env } from "../env";
+import { sendReminderEmail } from "../services/emailReminders";
 
 export const favoritesRouter = Router();
 
@@ -23,6 +25,17 @@ favoritesRouter.post(
       update: {},
       create: { userId: req.userId, eventId: event_id },
     });
+
+    // Só para testes (ver env.ts): manda o lembrete na hora, sem esperar o
+    // prazo real. Não trava a resposta — se falhar, favoritar continua ok.
+    if (env.DEBUG_EMAIL_ON_FAVORITE) {
+      prisma.user.findUnique({ where: { id: req.userId } }).then((user) => {
+        if (!user) return;
+        return sendReminderEmail(user.email, "Teste (favoritado agora)", event);
+      }).catch((err) => {
+        console.warn("Falha ao enviar e-mail de teste ao favoritar:", err);
+      });
+    }
 
     res.status(201).json(favorite);
   })

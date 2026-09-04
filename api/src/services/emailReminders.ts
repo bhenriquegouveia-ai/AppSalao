@@ -16,7 +16,9 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   month: "short",
 });
 
-function buildEmail(label: string, event: { title: string; locationName: string; startTime: Date }) {
+type ReminderEvent = { title: string; locationName: string; startTime: Date };
+
+export function buildReminderEmail(label: string, event: ReminderEvent) {
   const time = timeFormatter.format(event.startTime);
   const date = dateFormatter.format(event.startTime);
 
@@ -30,6 +32,14 @@ function buildEmail(label: string, event: { title: string; locationName: string;
       <p style="color: #888; font-size: 12px;">Salão Abrasel 2026</p>
     `,
   };
+}
+
+// Usado tanto pela checagem periódica quanto pelo envio imediato de teste
+// (DEBUG_EMAIL_ON_FAVORITE) — um único lugar decide o conteúdo do e-mail.
+export async function sendReminderEmail(to: string, label: string, event: ReminderEvent): Promise<void> {
+  if (!resend) return;
+  const email = buildReminderEmail(label, event);
+  await resend.emails.send({ from: env.EMAIL_FROM, to, subject: email.subject, html: email.html });
 }
 
 // Roda a cada minuto (ver index.ts): procura favoritos cujo evento está
@@ -69,14 +79,8 @@ export async function checkAndSendEmailReminders(): Promise<void> {
         continue; // já enviado antes
       }
 
-      const email = buildEmail(offset.label, favorite.event);
       try {
-        await resend.emails.send({
-          from: env.EMAIL_FROM,
-          to: favorite.user.email,
-          subject: email.subject,
-          html: email.html,
-        });
+        await sendReminderEmail(favorite.user.email, offset.label, favorite.event);
       } catch (err) {
         console.warn(`Falha ao enviar lembrete por e-mail para ${favorite.user.email}:`, err);
       }

@@ -13,6 +13,10 @@ const envSchema = z.object({
   // rodam (best-effort, igual às notificações locais — nunca derruba a API).
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default("Salão Abrasel <onboarding@resend.dev>"),
+  // Só para testes: manda o e-mail de lembrete na hora ao favoritar, em vez
+  // de esperar os prazos reais (1 dia / 1h / 15min). Nunca ligar em produção
+  // — manda um e-mail por favorito, sem relação com o horário do evento.
+  DEBUG_EMAIL_ON_FAVORITE: z.coerce.boolean().default(false),
 });
 
 const parsed = envSchema.safeParse(process.env);
