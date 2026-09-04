@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Image, LayoutChangeEvent, StyleSheet, View } from "react-native";
+import { Image, LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { colors } from "../../constants/theme";
+import { colors, radius, spacing } from "../../constants/theme";
 import { EmptyState, ErrorState, LoadingState } from "../../components/StateView";
 import { MapStackParamList } from "../../navigation/types";
-import { EventItem } from "../../types";
+import { EventItem, EventStatus } from "../../types";
 import { getEventStatus } from "../../lib/dateTime";
 import { useEventsStore } from "../events/store";
 import { PlantaPin } from "./PlantaPin";
 import { EventPreviewCard } from "./EventPreviewCard";
+import { PlacePreviewCard } from "./PlacePreviewCard";
+import { POINTS_OF_INTEREST } from "./pointsOfInterest";
 import { ZoomPan, ZoomPanHandle } from "./ZoomPan";
 
 type Props = NativeStackScreenProps<MapStackParamList, "MapView">;
@@ -18,6 +20,17 @@ const PLANTA_IMAGE = require("../../../assets/planta-salao.png");
 // calcular o enquadramento sem distorcer a planta em nenhum tamanho de tela.
 const PLANTA_ASPECT_RATIO = 2350 / 820;
 
+const STATUS_COLOR: Record<EventStatus, string> = {
+  upcoming: colors.marinho,
+  live: colors.live,
+  ended: colors.ended,
+};
+
+// Pins informativos (estandes/ativações sem horário marcado) usam uma cor
+// fixa, diferente da paleta de status das palestras — deixa claro que são
+// dois tipos de pin diferentes.
+const POI_COLOR = colors.secondary;
+
 interface RoomPin {
   key: string;
   locationName: string;
@@ -25,6 +38,8 @@ interface RoomPin {
   y: number;
   activeEvent: EventItem;
 }
+
+type Selection = { kind: "event"; key: string } | { kind: "poi"; key: string } | null;
 
 // Marcador curto exibido dentro do pin: usa o número da arena/sala quando
 // existe (ex: "Arena 1 - Keeta" -> "1"), senão a primeira letra do nome.
@@ -73,7 +88,7 @@ function pickRoomPins(events: EventItem[]): RoomPin[] {
 
 export function MapScreen({ route, navigation }: Props) {
   const { events, status, error, load } = useEventsStore();
-  const [selectedRoomKey, setSelectedRoomKey] = useState<string | null>(null);
+  const [selection, setSelection] = useState<Selection>(null);
   // A área do mapa tem a MESMA proporção da imagem (via style `aspectRatio`),
   // então largura/altura da viewport já são exatamente as da planta — sem
   // letterboxing nem espaço vazio sobrando, em qualquer tamanho de tela.
@@ -111,7 +126,7 @@ export function MapScreen({ route, navigation }: Props) {
 
     const pin = pins.find((p) => p.activeEvent.id === focusEventId);
     if (pin) {
-      setSelectedRoomKey(pin.key);
+      setSelection({ kind: "event", key: pin.key });
       zoomPanRef.current?.centerOn(pin.x * plantaWidth, pin.y * plantaHeight, 2);
     }
   }, [focusEventId, pins, plantaWidth, plantaHeight]);
@@ -124,11 +139,14 @@ export function MapScreen({ route, navigation }: Props) {
     return <ErrorState message={error ?? "Erro desconhecido"} onRetry={load} />;
   }
 
-  if (pins.length === 0) {
+  if (pins.length === 0 && POINTS_OF_INTEREST.length === 0) {
     return <EmptyState message="Nenhum evento com localização cadastrada no mapa ainda." />;
   }
 
-  const selectedPin = pins.find((p) => p.key === selectedRoomKey);
+  const selectedPin =
+    selection?.kind === "event" ? pins.find((p) => p.key === selection.key) : undefined;
+  const selectedPoi =
+    selection?.kind === "poi" ? POINTS_OF_INTEREST.find((p) => p.key === selection.key) : undefined;
 
   return (
     <View style={styles.container}>
@@ -150,28 +168,59 @@ export function MapScreen({ route, navigation }: Props) {
               />
               {pins.map((pin) => (
                 <PlantaPin
-                  key={pin.key}
+                  key={`event-${pin.key}`}
                   x={pin.x}
                   y={pin.y}
-                  status={getEventStatus(pin.activeEvent)}
-                  highlighted={pin.key === selectedRoomKey}
+                  color={STATUS_COLOR[getEventStatus(pin.activeEvent)]}
+                  highlighted={selection?.kind === "event" && selection.key === pin.key}
                   label={shortMarkerLabel(pin.locationName)}
-                  onPress={() => setSelectedRoomKey(pin.key)}
+                  onPress={() => setSelection({ kind: "event", key: pin.key })}
+                />
+              ))}
+              {POINTS_OF_INTEREST.map((poi) => (
+                <PlantaPin
+                  key={`poi-${poi.key}`}
+                  x={poi.x}
+                  y={poi.y}
+                  color={POI_COLOR}
+                  highlighted={selection?.kind === "poi" && selection.key === poi.key}
+                  label={poi.marker}
+                  onPress={() => setSelection({ kind: "poi", key: poi.key })}
                 />
               ))}
             </View>
           </ZoomPan>
         )}
+
+        <View style={styles.zoomControls}>
+          <Pressable
+            style={styles.zoomButton}
+            onPress={() => zoomPanRef.current?.zoomIn()}
+            hitSlop={6}
+          >
+            <Text style={styles.zoomButtonText}>+</Text>
+          </Pressable>
+          <Pressable
+            style={styles.zoomButton}
+            onPress={() => zoomPanRef.current?.zoomOut()}
+            hitSlop={6}
+          >
+            <Text style={styles.zoomButtonText}>–</Text>
+          </Pressable>
+        </View>
       </View>
 
       {selectedPin && (
         <EventPreviewCard
           event={selectedPin.activeEvent}
-          onClose={() => setSelectedRoomKey(null)}
+          onClose={() => setSelection(null)}
           onPress={() =>
             navigation.navigate("EventDetail", { eventId: selectedPin.activeEvent.id })
           }
         />
+      )}
+      {selectedPoi && (
+        <PlacePreviewCard label={selectedPoi.label} onClose={() => setSelection(null)} />
       )}
     </View>
   );
@@ -191,5 +240,32 @@ const styles = StyleSheet.create({
   plantaImage: {
     width: "100%",
     height: "100%",
+  },
+  zoomControls: {
+    position: "absolute",
+    right: spacing.sm,
+    bottom: spacing.sm,
+    gap: spacing.xs,
+  },
+  zoomButton: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 3,
+  },
+  zoomButtonText: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.marinho,
+    lineHeight: 22,
   },
 });
