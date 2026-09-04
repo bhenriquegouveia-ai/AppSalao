@@ -16,9 +16,17 @@ import { ZoomPan, ZoomPanHandle } from "./ZoomPan";
 type Props = NativeStackScreenProps<MapStackParamList, "MapView">;
 
 const PLANTA_IMAGE = require("../../../assets/planta-salao.png");
-// Dimensões reais do arquivo (ver app/assets/planta-salao.png) — usadas pra
-// calcular o enquadramento sem distorcer a planta em nenhum tamanho de tela.
-const PLANTA_ASPECT_RATIO = 2350 / 820;
+// Dimensões reais do arquivo (ver app/assets/planta-salao.png) — o conteúdo
+// dentro do ZoomPan é sempre renderizado nesse tamanho (nunca no tamanho,
+// menor, da viewport) e depois ESCALADO PRA BAIXO pra caber na tela. Isso é
+// o oposto do que fazíamos antes (renderizar do tamanho da viewport e
+// escalar pra CIMA ao dar zoom) — escalar uma imagem pequena pra cima é o
+// que causava o borrão ao dar zoom, tanto no mobile quanto no desktop.
+const PLANTA_NATIVE_WIDTH = 2350;
+const PLANTA_NATIVE_HEIGHT = 820;
+const PLANTA_ASPECT_RATIO = PLANTA_NATIVE_WIDTH / PLANTA_NATIVE_HEIGHT;
+// Quanto além do "encaixado na tela" o usuário pode ampliar.
+const MAX_ZOOM_MULTIPLIER = 4;
 
 const STATUS_COLOR: Record<EventStatus, string> = {
   upcoming: colors.marinho,
@@ -97,8 +105,11 @@ export function MapScreen({ route, navigation }: Props) {
 
   const zoomPanRef = useRef<ZoomPanHandle>(null);
 
-  const plantaWidth = viewport?.width ?? 0;
-  const plantaHeight = viewport?.height ?? 0;
+  // Escala em que a planta (na resolução nativa) cabe inteira na viewport —
+  // é o zoom mínimo permitido, e a base a partir da qual o zoom máximo é
+  // calculado.
+  const fitScale = viewport ? viewport.width / PLANTA_NATIVE_WIDTH : 1;
+  const maxScale = fitScale * MAX_ZOOM_MULTIPLIER;
 
   const handleLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
@@ -113,23 +124,27 @@ export function MapScreen({ route, navigation }: Props) {
 
   const focusEventId = route.params?.focusEventId;
 
-  // Enquadramento inicial: centraliza a planta inteira (escala 1 = "contain
-  // fit", já calculado acima) assim que soubermos o tamanho da viewport.
+  // Enquadramento inicial: centraliza a planta inteira na escala "encaixada
+  // na tela" assim que soubermos o tamanho da viewport.
   useEffect(() => {
-    if (!viewport || plantaWidth === 0 || hasCenteredRef.current) return;
+    if (!viewport || hasCenteredRef.current) return;
     hasCenteredRef.current = true;
-    zoomPanRef.current?.centerOn(plantaWidth / 2, plantaHeight / 2, 1);
-  }, [viewport, plantaWidth, plantaHeight]);
+    zoomPanRef.current?.centerOn(PLANTA_NATIVE_WIDTH / 2, PLANTA_NATIVE_HEIGHT / 2, fitScale);
+  }, [viewport, fitScale]);
 
   useEffect(() => {
-    if (!focusEventId || pins.length === 0 || plantaWidth === 0) return;
+    if (!focusEventId || pins.length === 0 || !viewport) return;
 
     const pin = pins.find((p) => p.activeEvent.id === focusEventId);
     if (pin) {
       setSelection({ kind: "event", key: pin.key });
-      zoomPanRef.current?.centerOn(pin.x * plantaWidth, pin.y * plantaHeight, 2);
+      zoomPanRef.current?.centerOn(
+        pin.x * PLANTA_NATIVE_WIDTH,
+        pin.y * PLANTA_NATIVE_HEIGHT,
+        fitScale * 2
+      );
     }
-  }, [focusEventId, pins, plantaWidth, plantaHeight]);
+  }, [focusEventId, pins, viewport, fitScale]);
 
   if (status === "loading" && events.length === 0) {
     return <LoadingState label="Carregando mapa..." />;
@@ -158,8 +173,10 @@ export function MapScreen({ route, navigation }: Props) {
             ref={zoomPanRef}
             viewportWidth={viewport.width}
             viewportHeight={viewport.height}
+            minScale={fitScale}
+            maxScale={maxScale}
           >
-            <View style={{ width: plantaWidth, height: plantaHeight }}>
+            <View style={{ width: PLANTA_NATIVE_WIDTH, height: PLANTA_NATIVE_HEIGHT }}>
               <Image
                 source={PLANTA_IMAGE}
                 style={styles.plantaImage}
@@ -174,6 +191,7 @@ export function MapScreen({ route, navigation }: Props) {
                   color={STATUS_COLOR[getEventStatus(pin.activeEvent)]}
                   highlighted={selection?.kind === "event" && selection.key === pin.key}
                   label={shortMarkerLabel(pin.locationName)}
+                  sizeMultiplier={1 / fitScale}
                   onPress={() => setSelection({ kind: "event", key: pin.key })}
                 />
               ))}
@@ -185,6 +203,7 @@ export function MapScreen({ route, navigation }: Props) {
                   color={POI_COLOR}
                   highlighted={selection?.kind === "poi" && selection.key === poi.key}
                   label={poi.marker}
+                  sizeMultiplier={1 / fitScale}
                   onPress={() => setSelection({ kind: "poi", key: poi.key })}
                 />
               ))}
